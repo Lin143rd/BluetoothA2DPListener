@@ -97,7 +97,8 @@ namespace BluetoothA2DPListener
             await TryPairing(deviceInfo);
             var bd = await BluetoothDevice.FromIdAsync(deviceInfo.Id);
             await RecieverOutput($"Pairing Device:\n\tAddress:{bd.BluetoothAddress}\n\tPairing:{deviceInfo.Pairing.IsPaired} {deviceInfo.Pairing.CanPair}\n\tProtectionLevel:{deviceInfo.Pairing.ProtectionLevel}\n\tName:{bd.Name}\n\tHostName:{bd.HostName}\n\tService:{bd.ClassOfDevice.ServiceCapabilities}\n");
-            var services = await bd.GetRfcommServicesAsync();
+            var services = await bd.GetRfcommServicesForIdAsync(
+                RfcommServiceId.FromShortId(Constants.RfcommServiceUUidAudioSink), BluetoothCacheMode.Uncached);
             var tmp2 = await bd.RequestAccessAsync();
 
             if (services.Services.Count > 0)
@@ -199,7 +200,7 @@ namespace BluetoothA2DPListener
         {
             try
             {
-                _rfcommProvider = await RfcommServiceProvider.CreateAsync(RfcommServiceId.FromUuid(Constants.RfcommServiceUuid));
+                _rfcommProvider = await RfcommServiceProvider.CreateAsync(RfcommServiceId.FromShortId(Constants.RfcommServiceUUidAudioSink));
             }
             // Catch exception HRESULT_FROM_WIN32(ERROR_DEVICE_NOT_AVAILABLE).
             catch (Exception ex) when ((uint)ex.HResult == 0x800710DF)
