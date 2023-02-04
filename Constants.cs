@@ -10,7 +10,7 @@
         public const string SwitchConnectionHostName = "EC:C4:0D:F2:47:55";
         public const string SwitchConnectionServiceName = "Bluetooth#Bluetoothe8:48:b8:c8:20:00-ec:c4:0d:f2:47:55#RFCOMM:00000000:{0000110e-0000-1000-8000-00805f9b34fb}";
         public static readonly Guid RfcommServiceUuid = Guid.Parse("84B1CF4D-1069-4AD6-89B6-E161D79BE4D8");
-        public static readonly UInt32 RfcommServiceUUidAudioSink = 0x1111110A;
+        public static readonly UInt32 RfcommServiceUUidAudioSink = 0x1111110B;
         public static readonly UInt32 hoge = 0x0000111A;
         public static readonly Dictionary<UInt32, string> attributeList = new Dictionary<UInt32, string>()
         {
