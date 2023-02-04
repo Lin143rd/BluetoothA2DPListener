@@ -1,0 +1,43 @@
+﻿<Window x:Class="BluetoothA2DPListener.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:BluetoothA2DPListener"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="600" Width="1200">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Text="Bluetooth Application Test" TextAlignment="Center"/>
+        <UniformGrid Grid.Row="1" Rows="1">
+            <Button Width="150" Cursor="Hand" Content="StartServer" Click="OnClickServer" IsEnabled="true" Margin="20" DockPanel.Dock="Left"/>
+            <Button Width="150" Cursor="Hand" Content="RecieveAdvertise" Click="OnClickAdvertise" IsEnabled="true" Margin="20" DockPanel.Dock="Right"/>
+        </UniformGrid>
+        <UniformGrid Grid.Row="2" Rows="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Label Grid.Row="0" Content="ServerConsole" HorizontalAlignment="Center"/>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <Label x:Name="ServerConsole"/>
+                </ScrollViewer>
+            </Grid>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Label Grid.Row="0" Content="RecieverConsole" HorizontalAlignment="Center"/>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <Label x:Name="RecieverConsole"/>
+                </ScrollViewer>
+            </Grid>
+        </UniformGrid>
+    </Grid>
+</Window>

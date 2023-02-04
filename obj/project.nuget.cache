@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "rvwiQtolHHa0DkKIGkMGMbFgBjajF/QBUaS9advw10OQv6Ffl4MAlsd5AqbkSK8UB4GkqzWdFuwGRW+c1MC3NA==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\hyuem\\donuments\\BluetoothA2DPListener\\BluetoothA2DPListener.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\hyuem\\.nuget\\packages\\microsoft.windows.sdk.net.ref\\10.0.19041.28\\microsoft.windows.sdk.net.ref.10.0.19041.28.nupkg.sha512"
+  ],
+  "logs": []
+}
