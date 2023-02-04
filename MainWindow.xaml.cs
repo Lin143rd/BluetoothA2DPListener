@@ -203,10 +203,16 @@ namespace BluetoothA2DPListener
                 _rfcommProvider = await RfcommServiceProvider.CreateAsync(RfcommServiceId.FromShortId(Constants.RfcommServiceUUidAudioSink));
             }
             // Catch exception HRESULT_FROM_WIN32(ERROR_DEVICE_NOT_AVAILABLE).
-            catch (Exception ex) when ((uint)ex.HResult == 0x800710DF)
+            catch (Exception ex)
             {
                 // The Bluetooth radio may be off.
                 await ServerOutput("failed Initialize\n");
+                return;
+            }
+
+            if (_rfcommProvider == null)
+            {
+                await ServerOutput("uwaaaaaaaaaaaa");
                 return;
             }
 
