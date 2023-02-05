@@ -2,6 +2,7 @@
 global using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.IO;
 using System.Threading;
 using System.Diagnostics;
 using System.Windows;
@@ -21,6 +22,8 @@ using Windows.ApplicationModel.Background;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Microsoft.VisualBasic;
 using System.Reflection.PortableExecutable;
+using NAudio.Wave;
+using NAudio.CoreAudioApi;
 
 namespace BluetoothA2DPListener
 {
@@ -38,6 +41,11 @@ namespace BluetoothA2DPListener
         private StreamSocket _socket;
         private StreamSocket _receiveSocket;
         private RfcommDeviceService _serverService;
+        private BufferedWaveProvider _bufferedWaveProvider;
+        private VolumeWaveProvider16 _wavProvider;
+        private MMDevice _mmDevice;
+        
+       
         public MainWindow()
         {
             InitializeComponent();
@@ -104,6 +112,7 @@ namespace BluetoothA2DPListener
             if (services.Services.Count > 0)
             {
                 await RecieverOutput($"Access Result to {deviceName}: {services.Error} {services.Services.Count} {tmp2}\n");
+                _serverService = services.Services[0];
             }
             else
             {
@@ -112,21 +121,21 @@ namespace BluetoothA2DPListener
 
             await RecieverOutput(await BluetoothAnalyzer.AnalyzeServiceResult(services));
 
-            foreach (var service in services.Services)
-            {
-                var attributeList = await service.GetSdpRawAttributesAsync();
-                foreach (var attribute in attributeList)
-                {
-                    if (attribute.Key == 0x0009)
-                    {
-                        var buf = attribute.Value;
-                        var reader = DataReader.FromBuffer(buf);
-                        SdpAnalyzer.AnalyzeSdp(reader);
-                    }
-                }
-                if (_serverService != null)
-                    break;
-            }
+            //foreach (var service in services.Services)
+            //{
+            //    var attributeList = await service.GetSdpRawAttributesAsync();
+            //    foreach (var attribute in attributeList)
+            //    {
+            //        if (attribute.Key == 0x0009)
+            //        {
+            //            var buf = attribute.Value;
+            //            var reader = DataReader.FromBuffer(buf);
+            //            await ServerOutput(SdpAnalyzer.AnalyzeSdp(reader));
+            //        }
+            //    }
+            //    if (_serverService != null)
+            //        break;
+            //}
             if (_serverService == null)
                 return;
 
@@ -140,8 +149,27 @@ namespace BluetoothA2DPListener
             {
                 await _receiveSocket.ConnectAsync(_serverService.ConnectionHostName, _serverService.ConnectionServiceName);
 
+                _writer = new DataWriter(_receiveSocket.OutputStream);
                 DataReader chatReader = new DataReader(_receiveSocket.InputStream);
-                ReceiveStringLoop(chatReader);
+
+
+                _bufferedWaveProvider = new BufferedWaveProvider(new WaveFormat(44100, 16, 2));
+                _wavProvider = new VolumeWaveProvider16(_bufferedWaveProvider);
+                _mmDevice = new MMDeviceEnumerator().GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+
+                using (IWavePlayer wavPlayer = new WasapiOut(_mmDevice, AudioClientShareMode.Shared, false, 200))
+                {
+                    wavPlayer.Init(_wavProvider);
+                    wavPlayer.Play();
+
+                    while (true)
+                    {
+                        ReceiveStringLoop(_bufferedWaveProvider, chatReader);
+                    }
+
+                    wavPlayer.Stop();
+                }
+
             }
             catch (Exception ex) when ((uint)ex.HResult == 0x80070490) // ERROR_ELEMENT_NOT_FOUND
             {
@@ -153,7 +181,7 @@ namespace BluetoothA2DPListener
             }
         }
 
-        private async void ReceiveStringLoop(DataReader chatReader)
+        private async void ReceiveStringLoop(BufferedWaveProvider provider, DataReader chatReader)
         {
             try
             {
@@ -172,9 +200,19 @@ namespace BluetoothA2DPListener
                     return;
                 }
 
-                await RecieverOutput("Received: " + chatReader.ReadString(stringLength));
+                var data = new byte[stringLength];
 
-                ReceiveStringLoop(chatReader);
+                chatReader.ReadBytes(data);
+
+                int bufsize = 44100;
+
+                for (int i = 0; i + bufsize < data.Length; i += bufsize)
+                {
+                    while (provider.BufferedBytes + bufsize >= provider.BufferLength)
+                        await Task.Delay(250);
+                    provider.AddSamples(data, i, bufsize);
+                    await Task.Delay(250);
+                }
             }
             catch (Exception ex)
             {
@@ -363,6 +401,73 @@ namespace BluetoothA2DPListener
             bool remoteDisconnection = false;
 
             await ServerOutput("Connected to Client: " + remoteDevice.Name);
+
+
+
+
+
+            //外部入力のダミーとして適当な音声データを用意して使う
+            string wavFilePath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                "sample.wav"
+                );
+            //mp3を使うならこう。
+            string mp3FilePath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                "sample.mp3"
+                );
+
+            if (!(File.Exists(wavFilePath) || File.Exists(mp3FilePath)))
+            {
+                Console.WriteLine("Target sound files were not found. Wav file or MP3 file is needed for this program.");
+                Console.WriteLine($"expected wav file: {wavFilePath}");
+                Console.WriteLine($"expected mp3 file: {wavFilePath}");
+                Console.WriteLine("(note: ONE file is enough, two files is not needed)");
+                return;
+            }
+
+            //mp3しかない場合、先にwavへ変換を行う
+            if (!File.Exists(wavFilePath))
+            {
+                using (var mp3reader = new Mp3FileReader(mp3FilePath))
+                using (var pcmStream = WaveFormatConversionStream.CreatePcmStream(mp3reader))
+                {
+                    WaveFileWriter.CreateWaveFile(wavFilePath, pcmStream);
+                }
+            }
+
+            byte[] data = File.ReadAllBytes(wavFilePath);
+
+            //若干効率が悪いがヘッダのバイト数を確実に割り出して削る
+            using (var r = new WaveFileReader(wavFilePath))
+            {
+                int headerLength = (int)(data.Length - r.Length);
+                data = data.Skip(headerLength).ToArray();
+            }
+
+            int bufsize = 44100;
+
+            for (int i = 0; i + bufsize < data.Length; i += bufsize) {
+                try
+                {
+                    int length = Math.Min(bufsize, data.Length - i);
+                    _writer.WriteUInt32((uint)length);
+                    _writer.WriteBytes(data[i..(i + length)]);
+
+                    await _writer.StoreAsync();
+                }
+                catch (Exception ex) when ((uint)ex.HResult == 0x80072745)
+                {
+                    // The remote device has disconnected the connection
+                    await ServerOutput("Remote Connection Disconnected");
+                    return;
+                }
+            }
+
+
+
+
+
 
             // Infinite read buffer loop
             while (true)
