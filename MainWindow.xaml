@@ -15,7 +15,7 @@
         <TextBlock Grid.Row="0" Text="Bluetooth Application Test" TextAlignment="Center"/>
         <UniformGrid Grid.Row="1" Rows="1">
             <Button Width="150" Cursor="Hand" Content="StartServer" Click="OnClickServer" IsEnabled="true" Margin="20" DockPanel.Dock="Left"/>
-            <Button Width="150" Cursor="Hand" Content="RecieveAdvertise" Click="OnClickAdvertise" IsEnabled="true" Margin="20" DockPanel.Dock="Right"/>
+            <Button Width="150" Cursor="Hand" Content="RecieveAdvertise" Click="OnClickReceiver" IsEnabled="true" Margin="20" DockPanel.Dock="Right"/>
         </UniformGrid>
         <UniformGrid Grid.Row="2" Rows="1">
             <Grid>
