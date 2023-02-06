@@ -1,15 +1,10 @@
-﻿using NAudio.Wave;
-using System;
-using System.IO;
-using System.Collections.Generic;
+﻿using System.IO;
 using System.Linq;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Rfcomm;
 using Windows.Networking.Sockets;
 using Windows.Storage.Streams;
+using NAudio.Wave;
 
 namespace BluetoothA2DPListener
 {

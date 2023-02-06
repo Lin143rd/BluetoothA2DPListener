@@ -1,29 +1,8 @@
 ﻿global using System;
 global using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
-using System.Threading;
-using System.Diagnostics;
 using System.Windows;
-using System.Printing;
-using Windows.Storage.Streams;
-using Windows.Devices.Bluetooth;
-using Windows.Devices.Bluetooth.Rfcomm;
-using Windows.Devices.Bluetooth.GenericAttributeProfile;
-using Windows.Devices.Enumeration;
-using Windows.Devices.Bluetooth.Advertisement;
 using System.Windows.Controls;
 using System.Threading.Tasks;
-using Windows.Networking.Sockets;
-using Windows.Networking;
-using Windows.UI.Core;
-using Windows.ApplicationModel.Background;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Microsoft.VisualBasic;
-using System.Reflection.PortableExecutable;
-using NAudio.Wave;
-using NAudio.CoreAudioApi;
 
 namespace BluetoothA2DPListener
 {
