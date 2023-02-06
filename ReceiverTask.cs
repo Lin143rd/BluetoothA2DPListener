@@ -78,6 +78,11 @@ namespace BluetoothA2DPListener
 
             StopWatcher();
 
+            await StartAudioPlayer();
+        }
+
+        private async Task StartAudioPlayer()
+        {
             lock (this)
             {
                 _socket = new StreamSocket();
@@ -87,26 +92,19 @@ namespace BluetoothA2DPListener
                 await _socket.ConnectAsync(_serverService.ConnectionHostName, _serverService.ConnectionServiceName);
 
                 _writer = new DataWriter(_socket.OutputStream);
-                DataReader chatReader = new DataReader(_socket.InputStream);
+                DataReader audioReader = new DataReader(_socket.InputStream);
 
+                var audioManager = new AudioManager(new DataReader(_socket.InputStream), new DataWriter(_socket.OutputStream));
 
-                _bufferedWaveProvider = new BufferedWaveProvider(new WaveFormat(44100, 16, 2));
-                _wavProvider = new VolumeWaveProvider16(_bufferedWaveProvider);
-                _mmDevice = new MMDeviceEnumerator().GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+                await _mainWindow.ServerOutput("Connected to Client: " + _serverService.Device.Name);
 
-                using (IWavePlayer wavPlayer = new WasapiOut(_mmDevice, AudioClientShareMode.Shared, false, 200))
-                {
-                    wavPlayer.Init(_wavProvider);
-                    wavPlayer.Play();
+                Task t1 = audioManager.Play();
+                Task t2 = audioManager.Stream();
 
-                    while (true)
-                    {
-                        await ReceiveStringLoop(_bufferedWaveProvider, chatReader);
-                    }
+                await Task.WhenAll(t1, t2);
 
-                    wavPlayer.Stop();
-                }
-
+                audioManager.Dispose();
+                Disconnect("Disconnected\n");
             }
             catch (Exception ex) when ((uint)ex.HResult == 0x80070490) // ERROR_ELEMENT_NOT_FOUND
             {
@@ -115,59 +113,6 @@ namespace BluetoothA2DPListener
             catch (Exception ex) when ((uint)ex.HResult == 0x80072740) // WSAEADDRINUSE
             {
                 await _mainWindow.ReceiverOutput("Please verify that there is no other RFCOMM connection to the same device.");
-            }
-        }
-
-        private async Task ReceiveStringLoop(BufferedWaveProvider provider, DataReader chatReader)
-        {
-            try
-            {
-                uint size = await chatReader.LoadAsync(sizeof(uint));
-                if (size < sizeof(uint))
-                {
-                    Disconnect("Remote device terminated connection - make sure only one instance of server is running on remote device");
-                    return;
-                }
-
-                uint stringLength = chatReader.ReadUInt32();
-                uint actualStringLength = await chatReader.LoadAsync(stringLength);
-                if (actualStringLength != stringLength)
-                {
-                    // The underlying socket was closed before we were able to read the whole data
-                    return;
-                }
-
-                var data = new byte[stringLength];
-
-                chatReader.ReadBytes(data);
-
-                int bufsize = 44100;
-
-                for (int i = 0; i + bufsize < data.Length; i += bufsize)
-                {
-                    while (provider.BufferedBytes + bufsize >= provider.BufferLength)
-                        await Task.Delay(250);
-                    provider.AddSamples(data, i, bufsize);
-                    await Task.Delay(250);
-                }
-            }
-            catch (Exception ex)
-            {
-                lock (this)
-                {
-                    if (_socket == null)
-                    {
-                        // Do not print anything here -  the user closed the socket.
-                        if ((uint)ex.HResult == 0x80072745)
-                            Console.WriteLine("Disconnect triggered by remote device");
-                        else if ((uint)ex.HResult == 0x800703E3)
-                            Console.WriteLine("The I/O operation has been aborted because of either a thread exit or an application request.");
-                    }
-                    else
-                    {
-                        Disconnect("Read stream failed with error: " + ex.Message);
-                    }
-                }
             }
         }
 

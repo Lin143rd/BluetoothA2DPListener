@@ -5,6 +5,7 @@ using Windows.Devices.Bluetooth.Rfcomm;
 using Windows.Networking.Sockets;
 using Windows.Storage.Streams;
 using NAudio.Wave;
+using System.Threading.Tasks;
 
 namespace BluetoothA2DPListener
 {
@@ -116,122 +117,17 @@ namespace BluetoothA2DPListener
             // Note - this is the supported way to get a Bluetooth device from a given socket
             var remoteDevice = await BluetoothDevice.FromHostNameAsync(_socket.Information.RemoteHostName);
 
-            _writer = new DataWriter(_socket.OutputStream);
-            var reader = new DataReader(_socket.InputStream);
-            bool remoteDisconnection = false;
+            var audioManager = new AudioManager(new DataReader(_socket.InputStream), new DataWriter(_socket.OutputStream));
 
             await _mainWindow.ServerOutput("Connected to Client: " + remoteDevice.Name);
 
+            Task t1 = audioManager.Play();
+            Task t2 = audioManager.Stream();
 
+            await Task.WhenAll(t1, t2);
 
-
-
-            //外部入力のダミーとして適当な音声データを用意して使う
-            string wavFilePath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                "sample.wav"
-                );
-            //mp3を使うならこう。
-            string mp3FilePath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                "sample.mp3"
-                );
-
-            if (!(File.Exists(wavFilePath) || File.Exists(mp3FilePath)))
-            {
-                Console.WriteLine("Target sound files were not found. Wav file or MP3 file is needed for this program.");
-                Console.WriteLine($"expected wav file: {wavFilePath}");
-                Console.WriteLine($"expected mp3 file: {wavFilePath}");
-                Console.WriteLine("(note: ONE file is enough, two files is not needed)");
-                return;
-            }
-
-            //mp3しかない場合、先にwavへ変換を行う
-            if (!File.Exists(wavFilePath))
-            {
-                using (var mp3reader = new Mp3FileReader(mp3FilePath))
-                using (var pcmStream = WaveFormatConversionStream.CreatePcmStream(mp3reader))
-                {
-                    WaveFileWriter.CreateWaveFile(wavFilePath, pcmStream);
-                }
-            }
-
-            byte[] data = File.ReadAllBytes(wavFilePath);
-
-            //若干効率が悪いがヘッダのバイト数を確実に割り出して削る
-            using (var r = new WaveFileReader(wavFilePath))
-            {
-                int headerLength = (int)(data.Length - r.Length);
-                data = data.Skip(headerLength).ToArray();
-            }
-
-            int bufsize = 44100;
-
-            for (int i = 0; i + bufsize < data.Length; i += bufsize)
-            {
-                try
-                {
-                    int length = Math.Min(bufsize, data.Length - i);
-                    _writer.WriteUInt32((uint)length);
-                    _writer.WriteBytes(data[i..(i + length)]);
-
-                    await _writer.StoreAsync();
-                }
-                catch (Exception ex) when ((uint)ex.HResult == 0x80072745)
-                {
-                    // The remote device has disconnected the connection
-                    await _mainWindow.ServerOutput("Remote Connection Disconnected");
-                    return;
-                }
-            }
-
-
-
-
-
-
-            // Infinite read buffer loop
-            while (true)
-            {
-                try
-                {
-                    // Based on the protocol we've defined, the first uint is the size of the message
-                    uint readLength = await reader.LoadAsync(sizeof(uint));
-
-                    // Check if the size of the data is expected (otherwise the remote has already terminated the connection)
-                    if (readLength < sizeof(uint))
-                    {
-                        remoteDisconnection = true;
-                        break;
-                    }
-                    uint currentLength = reader.ReadUInt32();
-
-                    // Load the rest of the message since you already know the length of the data expected.  
-                    readLength = await reader.LoadAsync(currentLength);
-
-                    // Check if the size of the data is expected (otherwise the remote has already terminated the connection)
-                    if (readLength < currentLength)
-                    {
-                        remoteDisconnection = true;
-                        break;
-                    }
-                    string message = reader.ReadString(currentLength);
-                    await _mainWindow.ServerOutput(message);
-                }
-                // Catch exception HRESULT_FROM_WIN32(ERROR_OPERATION_ABORTED).
-                catch (Exception ex) when ((uint)ex.HResult == 0x800703E3)
-                {
-                    await _mainWindow.ServerOutput("failed on connection\n");
-                    break;
-                }
-            }
-
-            reader.DetachStream();
-            if (remoteDisconnection)
-            {
-                Disconnect("failed");
-                await _mainWindow.ServerOutput("Client disconnected");
-            }
+            audioManager.Dispose();
+            Disconnect("Disconnected\n");
         }
 
         private async void Disconnect(string disconnection)
