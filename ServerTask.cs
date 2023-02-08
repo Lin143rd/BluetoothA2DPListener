@@ -35,7 +35,7 @@ namespace BluetoothA2DPListener
 
             if (_rfcommProvider == null)
             {
-                await _mainWindow.ServerOutput("uwaaaaaaaaaaaa");
+                await _mainWindow.ServerOutput("failed to create provider\n");
                 return;
             }
 
@@ -98,7 +98,7 @@ namespace BluetoothA2DPListener
         private async void OnConnectionReceived(
             StreamSocketListener sender, StreamSocketListenerConnectionReceivedEventArgs args)
         {
-            await _mainWindow.ServerOutput("kityaaaaaaaaaaaa");
+            await _mainWindow.ServerOutput("connection received\n");
             // Don't need the listener anymore
             _socketListener.Dispose();
             _socketListener = null;
