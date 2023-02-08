@@ -101,7 +101,7 @@ namespace BluetoothA2DPListener
                 {
                     try
                     {
-                        await ReceiveStringLoop(_bufferedWaveProvider, _reader);
+                        await ReceiveAudioBuffer(_bufferedWaveProvider, _reader);
                     }
                     catch (Exception ex)
                     {
@@ -112,7 +112,7 @@ namespace BluetoothA2DPListener
                 wavPlayer.Stop();
             }
         }
-        private async Task ReceiveStringLoop(BufferedWaveProvider provider, DataReader reader)
+        private async Task ReceiveAudioBuffer(BufferedWaveProvider provider, DataReader reader)
         {
             try
             {
@@ -146,21 +146,6 @@ namespace BluetoothA2DPListener
             }
             catch (Exception ex)
             {
-                //lock (this)
-                //{
-                //    if (_socket == null)
-                //    {
-                //        // Do not print anything here -  the user closed the socket.
-                //        if ((uint)ex.HResult == 0x80072745)
-                //            Console.WriteLine("Disconnect triggered by remote device");
-                //        else if ((uint)ex.HResult == 0x800703E3)
-                //            Console.WriteLine("The I/O operation has been aborted because of either a thread exit or an application request.");
-                //    }
-                //    else
-                //    {
-                //        Disconnect("Read stream failed with error: " + ex.Message);
-                //    }
-                //}
                 return;
             }
         }

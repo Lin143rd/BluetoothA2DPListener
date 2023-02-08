@@ -46,6 +46,7 @@ namespace BluetoothA2DPListener
             await _mainWindow.ReceiverOutput("Info: " + deviceInfo.ToString() + deviceInfo.Name + "\n");
             var deviceName = deviceInfo.Name;
 
+            // DESKTOP-4MH8S0M
             if (deviceName != "DESKTOP-4MH8S0M")
                 return;
 
@@ -57,13 +58,20 @@ namespace BluetoothA2DPListener
             await TryPairing(deviceInfo);
             var bd = await BluetoothDevice.FromIdAsync(deviceInfo.Id);
             await _mainWindow.ReceiverOutput($"Pairing Device:\n\tAddress:{bd.BluetoothAddress}\n\tPairing:{deviceInfo.Pairing.IsPaired} {deviceInfo.Pairing.CanPair}\n\tProtectionLevel:{deviceInfo.Pairing.ProtectionLevel}\n\tName:{bd.Name}\n\tHostName:{bd.HostName}\n\tService:{bd.ClassOfDevice.ServiceCapabilities}\n");
-            var services = await bd.GetRfcommServicesForIdAsync(
-                RfcommServiceId.FromShortId(Constants.RfcommServiceUUidAudioSink), BluetoothCacheMode.Uncached);
+            //var services = await bd.GetRfcommServicesForIdAsync(
+                //RfcommServiceId.FromShortId(Constants.RfcommServiceUUidAudioSink), BluetoothCacheMode.Uncached);
+            var services = await bd.GetRfcommServicesAsync(BluetoothCacheMode.Uncached);
             var tmp2 = await bd.RequestAccessAsync();
 
             if (services.Services.Count > 0)
             {
                 await _mainWindow.ReceiverOutput($"Access Result to {deviceName}: {services.Error} {services.Services.Count} {tmp2}\n");
+                //foreach (var service in services.Services) {
+                //    var attributeList = await service.GetSdpRawAttributesAsync();
+                //    foreach(var attribute in attributeList) {
+
+                //    }
+                //}
                 _serverService = services.Services[0];
             }
             else

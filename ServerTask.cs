@@ -80,14 +80,14 @@ namespace BluetoothA2DPListener
             SdpInitializer.InitializeSdp(rfcommProvider, sdp, 0x0100);
 
 
-            // Bluetooth Profile Descriptor List
-            var ls = new List<SdpData>();
-            var ls2 = new List<SdpData>();
-            ls.Add(new SdpData(3, new byte[] { 0x11, 0x0D }));
-            ls.Add(new SdpData(1, new byte[] { 0x01, 0x03 }));
-            ls2.Add(new SdpData(6, ls.ToArray()));
-            sdp = new SdpData(6, ls2.ToArray());
-            SdpInitializer.InitializeSdp(rfcommProvider, sdp, 0x0009);
+            //// Bluetooth Profile Descriptor List
+            //var ls = new List<SdpData>();
+            //var ls2 = new List<SdpData>();
+            //ls.Add(new SdpData(3, new byte[] { 0x11, 0x0D }));
+            //ls.Add(new SdpData(1, new byte[] { 0x01, 0x03 }));
+            //ls2.Add(new SdpData(6, ls.ToArray()));
+            //sdp = new SdpData(6, ls2.ToArray());
+            //SdpInitializer.InitializeSdp(rfcommProvider, sdp, 0x0009);
 
 
             // Supported Features
